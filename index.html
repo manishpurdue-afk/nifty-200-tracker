@@ -129,7 +129,7 @@ tr:hover td { background: #f8fafc; }
 <!-- ── DATA ─────────────────────────────────────────────────────────────────── -->
 <script>
 const STATE = {
-  "date": "2026-06-30",
+  "date": "2026-07-01",
   "cash": 5000000.0,
   "baskets": {
     "0": {
@@ -159,13 +159,13 @@ const STATE = {
       },
       "alloc_value": 2500000.0,
       "current_prices": {
-        "BANKBARODA.NS": 272.4,
-        "MARICO.NS": 836.25,
-        "NATIONALUM.NS": 339.6,
-        "TATASTEEL.NS": 188.06,
-        "TORNTPHARM.NS": 4620.1
+        "BANKBARODA.NS": 271.65,
+        "MARICO.NS": 851.0,
+        "NATIONALUM.NS": 334.65,
+        "TATASTEEL.NS": 185.17,
+        "TORNTPHARM.NS": 4640.8
       },
-      "current_value": 2491335.66
+      "current_value": 2486593.88
     },
     "1": {
       "stocks": [
@@ -194,13 +194,13 @@ const STATE = {
       },
       "alloc_value": 2500000.0,
       "current_prices": {
-        "ADANIGREEN.NS": 1492.2,
-        "COALINDIA.NS": 439.05,
-        "CUMMINSIND.NS": 5659.5,
-        "FEDERALBNK.NS": 330.05,
-        "LUPIN.NS": 2419.0
+        "ADANIGREEN.NS": 1535.0,
+        "COALINDIA.NS": 434.75,
+        "CUMMINSIND.NS": 5663.0,
+        "FEDERALBNK.NS": 331.4,
+        "LUPIN.NS": 2397.5
       },
-      "current_value": 2513733.45
+      "current_value": 2520745.74
     }
   }
 };
@@ -213,495 +213,24 @@ const EQ_LOG = [
     "basket_value": 5005069.11,
     "nifty_close": 23865.75,
     "regime": "RISK-OFF"
+  },
+  {
+    "date": "2026-07-01",
+    "equity": 10007339.62,
+    "cash": 5000000.0,
+    "basket_value": 5007339.62,
+    "nifty_close": 23865.75,
+    "regime": "RISK-OFF"
   }
 ];
 
 const TRADE_LOG = [];
 
 const PAPER_START = 10000000;
-const SCAN_DATE   = "2026-06-30";
+const SCAN_DATE   = "2026-07-01";
 const REGIME      = "RISK-OFF";
 const NIFTY_PX    = 23865.75;
 const NIFTY_D200  = 24877.97;
 
 function ticker(s) { return s.replace(".NS",""); }
 </script>
-
-<!-- ── HEADER ── -->
-<div class="header">
-  <div>
-    <h1>Nifty 200 Strategy Performance Tracker</h1>
-    <div class="sub">Paper ₹1 Crore &nbsp;·&nbsp; Go-live: 30 Jun 2026</div>
-  </div>
-  <div style="text-align:right">
-    <div class="regime-badge" id="regimeBadge">—</div>
-    <div class="nifty-line" id="niftyLine">—</div>
-    <div class="nifty-line" style="margin-top:3px" id="lastUpdatedLine">Last updated: —</div>
-    <div class="deploy-track"><div class="deploy-fill" id="deployFill"></div><div class="deploy-empty" id="deployEmpty"></div></div>
-    <div class="deploy-label" id="deployLabel">—</div>
-  </div>
-</div>
-
-<!-- ── BACKTEST STRIP ── -->
-<div class="bt-strip">
-  <div class="bt-title">Validated Backtest 2018–2026</div>
-  <div class="bt-item"><span class="bt-val">34.1%</span>CAGR</div>
-  <div class="bt-item"><span class="bt-val">-16.4%</span>Max DD</div>
-  <div class="bt-item"><span class="bt-val">1.70</span>Sharpe</div>
-  <div class="bt-item"><span class="bt-val">2.08</span>Calmar</div>
-  <div class="bt-item"><span class="bt-val">37.0%</span>OOS CAGR</div>
-  <div class="bt-item"><span class="bt-val">-14.2%</span>OOS Max DD</div>
-  <div class="bt-item"><span class="bt-val">119%</span>OOS/IS Retention</div>
-</div>
-
-<!-- ── KPIs ── -->
-<div class="kpi-grid" id="kpiGrid"></div>
-
-<!-- ── RATIOS ── -->
-<div class="ratio-grid" id="ratioGrid"></div>
-
-<!-- ── CHARTS ── -->
-<div class="charts-row">
-  <div class="chart-panel">
-    <div class="panel-title">Equity Curve (₹ Lakhs)</div>
-    <div style="position:relative;height:130px"><canvas id="eqChart"></canvas></div>
-  </div>
-  <div class="chart-panel">
-    <div class="panel-title">Drawdown (%)</div>
-    <div style="position:relative;height:130px"><canvas id="ddChart"></canvas></div>
-  </div>
-</div>
-
-<!-- ── BASKETS + ALLOC ── -->
-<div class="two-col">
-  <div class="panel">
-    <div class="panel-title" style="margin-bottom:10px">Basket Health Monitor</div>
-    <div id="basketHealthDiv"></div>
-  </div>
-  <div class="panel">
-    <div class="panel-title" style="margin-bottom:10px">Capital Allocation</div>
-    <div style="position:relative;height:180px"><canvas id="allocChart"></canvas></div>
-    <div id="basketPnlDiv" style="margin-top:12px"></div>
-  </div>
-</div>
-
-<!-- ── POSITION SIZING ── -->
-<div class="full-panel" style="margin-bottom:10px">
-  <div class="panel-title" style="margin-bottom:10px">Position Sizing Detail</div>
-  <table id="posTable">
-    <thead>
-      <tr><th>Basket</th><th>Stock</th><th>Entry Price</th><th>Shares</th><th>Entry Value</th><th>LTP</th><th>LTP Value</th><th>Alloc %</th><th>Live P&L</th></tr>
-    </thead>
-    <tbody id="posBody"></tbody>
-  </table>
-</div>
-
-<!-- ── TRADE LOG ── -->
-<div class="full-panel">
-  <div class="panel-title" style="margin-bottom:10px">Trade History</div>
-  <table>
-    <thead>
-      <tr><th>Type</th><th>Basket</th><th>Date</th><th>Stocks</th><th>Value</th><th>P&L</th><th>Signal / Reason</th></tr>
-    </thead>
-    <tbody id="tradeBody"></tbody>
-  </table>
-</div>
-
-<div class="footer">
-  Paper portfolio only — never places orders &nbsp;·&nbsp; Auto-refreshes every weekday at 9 PM IST
-  <br>B5 &nbsp;·&nbsp; 12/60 DMA crossover on composite &nbsp;·&nbsp; σ1.0 exit &nbsp;·&nbsp; Vacancy-driven entry &nbsp;·&nbsp; Unique stocks across baskets
-</div>
-
-<script>
-// ── KPIs ──────────────────────────────────────────────────────────────────────
-(function buildKPIs() {
-  const eq      = EQ_LOG[EQ_LOG.length - 1].equity;
-  const pnl     = eq - PAPER_START;
-  const pnlPct  = (pnl / PAPER_START * 100).toFixed(2);
-  const goLive  = new Date("2026-06-30");
-  const today   = new Date(SCAN_DATE);
-  const days    = Math.max(1, Math.round((today - goLive) / 86400000));
-  const years   = days / 365;
-  const cagr    = ((eq / PAPER_START) ** (1 / Math.max(years, 1/365)) - 1) * 100;
-  const bvArr   = Object.values(STATE.baskets).filter(b => b.stocks && b.stocks.length);
-  const bv      = bvArr.reduce((s, b) => s + (b.current_value || b.alloc_value || 0), 0);
-  const cash    = Math.max(0, eq - bv);
-
-  const cards = [
-    { label:"Portfolio Value", value:`₹${(eq/1e7).toFixed(4)} Cr`, sub:`₹${(eq/1e5).toFixed(2)} Lakhs` },
-    { label:"Total P&L",       value:`₹${(pnl/1e5).toFixed(2)}L`, sub:`${pnl>=0?"+":""}${pnlPct}%`, cls: pnl>=0?"green":"red" },
-    { label:"Paper CAGR",      value:`${cagr.toFixed(1)}%`, sub:"annualised", cls:"blue" },
-    { label:"Cash Held",       value:`₹${(cash/1e5).toFixed(1)}L`, sub:`${(cash/eq*100).toFixed(0)}% buffer` },
-    { label:"In Baskets",      value:`₹${(bv/1e5).toFixed(1)}L`, sub:`${(bv/eq*100).toFixed(0)}% deployed` },
-    { label:"Days Live",       value:`${days}`, sub:`since 30 Jun 2026` },
-  ];
-
-  document.getElementById("kpiGrid").innerHTML = cards.map(c =>
-    `<div class="kpi-card ${c.cls||''}">
-      <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value">${c.value}</div>
-      ${c.sub ? `<div class="kpi-sub">${c.sub}</div>` : ""}
-    </div>`
-  ).join("");
-})();
-
-// ── Ratios ────────────────────────────────────────────────────────────────────
-(function buildRatios() {
-  const eqs   = EQ_LOG.map(r => r.equity);
-  const n     = eqs.length;
-  let sharpe = "—", sortino = "—", calmar = "—", maxdd = "—", windays = "—";
-
-  if (n >= 2) {
-    const rets = eqs.slice(1).map((v,i) => (v - eqs[i]) / eqs[i]);
-    const mean = rets.reduce((a,b)=>a+b,0)/rets.length;
-    const std  = Math.sqrt(rets.map(r=>(r-mean)**2).reduce((a,b)=>a+b,0)/rets.length);
-    const neg  = rets.filter(r=>r<0);
-    const dstd = neg.length ? Math.sqrt(neg.map(r=>r**2).reduce((a,b)=>a+b,0)/neg.length) : 0;
-    const rf   = 0.06/252;
-    sharpe  = std  > 0 ? ((mean-rf)/std*Math.sqrt(252)).toFixed(2) : "—";
-    sortino = dstd > 0 ? ((mean-rf)/dstd*Math.sqrt(252)).toFixed(2) : "—";
-
-    let peak = eqs[0], worstDd = 0;
-    eqs.forEach(v => { peak = Math.max(peak,v); worstDd = Math.min(worstDd,(v/peak-1)*100); });
-    maxdd = worstDd.toFixed(1) + "%";
-
-    const annRet = ((eqs[n-1]/PAPER_START)**(365/Math.max(n,1))-1)*100;
-    calmar = worstDd < 0 ? (annRet/Math.abs(worstDd)).toFixed(2) : "—";
-
-    const wins = rets.filter(r=>r>0).length;
-    windays = (wins/rets.length*100).toFixed(1) + "%";
-  }
-
-  const ddCls = maxdd !== "—" && parseFloat(maxdd) < -5 ? "red" : "";
-  const cards = [
-    { label:"Sharpe",   value: sharpe,  cls: sharpe  !== "—" && +sharpe  > 1 ? "blue" : "" },
-    { label:"Sortino",  value: sortino, cls: sortino !== "—" && +sortino > 1 ? "blue" : "" },
-    { label:"Calmar",   value: calmar,  cls: calmar  !== "—" && +calmar  > 1 ? "blue" : "" },
-    { label:"Max DD",   value: maxdd,   cls: ddCls },
-    { label:"Win Days", value: windays, cls: windays !== "—" && parseFloat(windays) > 50 ? "green" : "red" },
-  ];
-  document.getElementById("ratioGrid").innerHTML = cards.map(c =>
-    `<div class="ratio-card ${c.cls}">
-      <div class="ratio-label">${c.label}</div>
-      <div class="ratio-value">${c.value}</div>
-    </div>`
-  ).join("");
-})();
-
-// ── Equity chart ──────────────────────────────────────────────────────────────
-(function buildEqChart() {
-  const labels = EQ_LOG.map(r => r.date);
-  const vals   = EQ_LOG.map(r => +(r.equity / 1e5).toFixed(2));
-  const start  = PAPER_START / 1e5;
-
-  const ctx = document.getElementById("eqChart").getContext("2d");
-  const grad = ctx.createLinearGradient(0, 0, 0, 130);
-  grad.addColorStop(0, "rgba(37,99,235,0.2)");
-  grad.addColorStop(1, "rgba(37,99,235,0.01)");
-
-  new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        { label:"Portfolio", data:vals, borderColor:"#2563eb", backgroundColor:grad,
-          borderWidth:2, pointRadius:5, pointBackgroundColor:"#2563eb",
-          fill:true, tension:0.3 },
-        { label:"₹100L start", data:labels.map(()=>start), borderColor:"#cbd5e1",
-          borderWidth:1, borderDash:[5,4], pointRadius:0, fill:false }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false, animation:false,
-      plugins: {
-        legend: { labels:{ color:"#64748b", font:{size:10} } },
-        tooltip: { mode:"index", intersect:false,
-          callbacks:{ label: ctx => "₹" + ctx.parsed.y.toFixed(2) + "L" } }
-      },
-      scales: {
-        x: { grid:{color:"#f1f5f9"}, ticks:{color:"#94a3b8",font:{size:10}} },
-        y: { grid:{color:"#f1f5f9"}, ticks:{color:"#94a3b8",font:{size:10},
-               callback:v=>"₹"+v+"L"} }
-      }
-    }
-  });
-})();
-
-// ── Drawdown chart ────────────────────────────────────────────────────────────
-(function buildDDChart() {
-  const eqs = EQ_LOG.map(r => r.equity);
-  let peak  = PAPER_START;
-  const dd  = eqs.map(e => { peak = Math.max(peak, e); return +((e/peak-1)*100).toFixed(2); });
-
-  const ctx = document.getElementById("ddChart").getContext("2d");
-  const grad = ctx.createLinearGradient(0, 0, 0, 130);
-  grad.addColorStop(0, "rgba(220,38,38,0.15)");
-  grad.addColorStop(1, "rgba(220,38,38,0.01)");
-
-  new Chart(ctx, {
-    type:"line",
-    data:{
-      labels: EQ_LOG.map(r=>r.date),
-      datasets:[{ label:"Drawdown", data:dd, borderColor:"#dc2626",
-        backgroundColor:grad, borderWidth:1.5, pointRadius:4,
-        pointBackgroundColor:"#dc2626", fill:true, tension:0.3 }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false, animation:false,
-      plugins:{ legend:{display:false},
-        tooltip:{ callbacks:{ label:ctx=>ctx.parsed.y.toFixed(2)+"%" } }
-      },
-      scales:{
-        x:{ grid:{color:"#f1f5f9"}, ticks:{color:"#94a3b8",font:{size:10}} },
-        y:{ grid:{color:"#f1f5f9"}, max:0,
-            ticks:{color:"#94a3b8",font:{size:10},callback:v=>v+"%"} }
-      }
-    }
-  });
-})();
-
-// ── Allocation donut ──────────────────────────────────────────────────────────
-(function buildAlloc() {
-  const b0  = STATE.baskets["0"].alloc_value;
-  const b1  = STATE.baskets["1"].alloc_value;
-  const eq  = EQ_LOG[EQ_LOG.length-1].equity;
-  const cash= Math.max(eq - b0 - b1, 0);
-
-  new Chart(document.getElementById("allocChart"), {
-    type:"doughnut",
-    data:{
-      labels:["Basket 0","Basket 1","Cash"],
-      datasets:[{
-        data:[b0/1e5, b1/1e5, cash/1e5],
-        backgroundColor:["#2563eb","#16a34a","#e2e8f0"],
-        borderColor:"#fff", borderWidth:3, hoverOffset:6
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false, animation:false,
-      cutout:"62%",
-      plugins:{
-        legend:{ position:"bottom", labels:{color:"#64748b",font:{size:10},padding:12} },
-        tooltip:{ callbacks:{
-          label:ctx=>" ₹"+ctx.parsed.toFixed(1)+"L ("+
-            (eq>0?(ctx.parsed*1e5/eq*100).toFixed(1):"0")+"%)"
-        }}
-      }
-    }
-  });
-})();
-
-// ── Active baskets HTML ───────────────────────────────────────────────────────
-(function buildBasketHealth() {
-  const today = new Date(SCAN_DATE);
-  let html = "";
-
-  for (const bid of ["0","1","2","3"]) {
-    const b = STATE.baskets[bid];
-    if (!b || !b.stocks || !b.stocks.length) {
-      html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;opacity:.55">
-        <span style="font-weight:700;color:#0f172a;font-size:13px">B${bid}</span>
-        <span style="font-size:9.5px;font-weight:700;background:#f1f5f9;color:#94a3b8;border:1px solid #cbd5e1;padding:1px 7px;border-radius:4px;text-transform:uppercase">VACANT</span>
-        <span style="color:#94a3b8;font-size:11px;margin-left:4px">Waiting for DMA signal</span>
-      </div>`;
-      continue;
-    }
-
-    const entryVal = b.alloc_value || 0;
-    const curVal   = b.current_value || entryVal;
-    const pnl      = curVal - entryVal;
-    const pnlPct   = entryVal > 0 ? (pnl / entryVal * 100) : 0;
-    const sigma    = b.basket_sigma || 0;
-    // σ exit at 1.0σ below entry composite
-    // proxy: how much of the σ-buffer has been consumed (if basket is down)
-    const sigmaUsedPct = sigma > 0 && pnlPct < 0 ? Math.min(Math.abs(pnlPct/100) / sigma * 100, 100) : 0;
-    const exitThreshPct = (sigma * 100).toFixed(2);
-
-    const entryDate = new Date(b.entry_date);
-    const daysHeld  = Math.round((today - entryDate) / 86400000);
-
-    const pnlCls  = pnl >= 0 ? "#16a34a" : "#dc2626";
-    const sign    = pnl >= 0 ? "+" : "";
-
-    // σ-buffer bar: red fill = how much of exit threshold consumed
-    const barFill = sigmaUsedPct.toFixed(0);
-    const barCol  = sigmaUsedPct > 70 ? "#dc2626" : sigmaUsedPct > 40 ? "#f59e0b" : "#16a34a";
-
-    html += `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span style="font-weight:700;color:#0f172a;font-size:13px">B${bid}</span>
-        <span style="font-size:9.5px;font-weight:700;background:#dcfce7;color:#16a34a;border:1px solid #86efac;padding:1px 7px;border-radius:4px;text-transform:uppercase">ACTIVE</span>
-        <span style="color:#64748b;font-size:10.5px">since ${b.entry_date}</span>
-        <span style="margin-left:auto;font-weight:700;color:${pnlCls};font-size:12px">${sign}₹${(pnl/1e3).toFixed(1)}K (${sign}${pnlPct.toFixed(2)}%)</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px">
-        <div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;margin-bottom:2px">Days Held</div><div style="font-weight:600;color:#334155">${daysHeld}</div></div>
-        <div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;margin-bottom:2px">σ Exit Threshold</div><div style="font-weight:600;color:#334155">−${exitThreshPct}%</div></div>
-        <div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;margin-bottom:2px">Buffer Used</div><div style="font-weight:600;color:${barCol}">${barFill}%</div></div>
-      </div>
-      <div style="margin-bottom:3px">
-        <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${barFill}%;background:${barCol};border-radius:3px;transition:width .4s"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-top:2px"><span>0%</span><span>Exit triggers at 100%</span></div>
-      </div>
-    </div>`;
-  }
-
-  document.getElementById("basketHealthDiv").innerHTML = html;
-})();
-
-// ── Position sizing table ─────────────────────────────────────────────────────
-(function buildPos() {
-  const eq      = EQ_LOG[EQ_LOG.length-1].equity;
-  const ltpDate = SCAN_DATE ? new Date(SCAN_DATE).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—";
-  let rows = "";
-  for (const bid of ["0","1"]) {
-    const b = STATE.baskets[bid];
-    if (!b) continue;
-    const hasCur = b.current_prices && Object.keys(b.current_prices).length > 0;
-    b.stocks.forEach((t, i) => {
-      const ep     = b.entry_prices[t];
-      const sh     = b.shares[t];
-      const ltp    = hasCur ? (b.current_prices[t] || ep) : null;
-      const entryVal = ep * sh;
-      const ltpVal   = ltp !== null ? ltp * sh : null;
-      const pnl      = ltpVal !== null ? ltpVal - entryVal : null;
-      const pnlPct   = pnl !== null && ep > 0 ? (ltp/ep - 1)*100 : null;
-      const pct      = (entryVal / eq * 100).toFixed(1);
-      const pnlCls   = pnl !== null ? (pnl >= 0 ? "positive" : "negative") : "";
-      const sign     = pnlPct !== null ? (pnlPct >= 0 ? "+" : "") : "";
-
-      const ltpCell  = ltp !== null
-        ? `₹${ltp.toLocaleString("en-IN",{maximumFractionDigits:2})} <span style="color:#94a3b8;font-size:9px">${ltpDate}</span>`
-        : `<span class="neutral">—</span>`;
-      const ltpValCell = ltpVal !== null
-        ? `₹${(ltpVal/1e3).toFixed(1)}K`
-        : `<span class="neutral">—</span>`;
-      const pnlStr   = pnl !== null
-        ? `<span class="${pnlCls}">${sign}₹${(pnl/1e3).toFixed(1)}K (${sign}${pnlPct.toFixed(1)}%)</span>`
-        : `<span class="neutral">—</span>`;
-
-      rows += `<tr>
-        <td>${i===0 ? `<span class="tag tag-active">B${bid}</span>` : ""}</td>
-        <td class="sym">${ticker(t)}</td>
-        <td>₹${ep.toLocaleString("en-IN",{maximumFractionDigits:2})}</td>
-        <td>${sh.toLocaleString("en-IN",{maximumFractionDigits:0})}</td>
-        <td>₹${(entryVal/1e3).toFixed(1)}K</td>
-        <td>${ltpCell}</td>
-        <td>${ltpValCell}</td>
-        <td>${pct}%</td>
-        <td>${pnlStr}</td>
-      </tr>`;
-    });
-  }
-  document.getElementById("posBody").innerHTML = rows;
-})();
-
-// ── Trade history ─────────────────────────────────────────────────────────────
-(function buildTrades() {
-  if (!TRADE_LOG.length) {
-    document.getElementById("tradeBody").innerHTML =
-      '<tr><td colspan="7" class="empty-row">No completed trades yet — monitoring live entries</td></tr>';
-    return;
-  }
-  const rows = [...TRADE_LOG].reverse().map(t => {
-    const stks = t.stocks.map(ticker).join(", ");
-    if (t.type === "ENTRY") {
-      return `<tr>
-        <td><span class="tag tag-entry">ENTRY</span></td>
-        <td>B${t.basket_id}</td><td>${t.entry_date}</td>
-        <td class="sym-list">${stks}</td>
-        <td>₹${(t.alloc_value/1e5).toFixed(2)}L</td>
-        <td class="neutral">—</td>
-        <td>${t.regime} | DMA ${t.dma_signal}</td>
-      </tr>`;
-    } else {
-      const pc = t.pnl>=0 ? "positive":"negative";
-      return `<tr>
-        <td><span class="tag tag-exit">EXIT</span></td>
-        <td>B${t.basket_id}</td><td>${t.exit_date}</td>
-        <td class="sym-list">${stks}</td>
-        <td>₹${(t.exit_value/1e5).toFixed(2)}L</td>
-        <td class="${pc}">₹${(t.pnl/1e3).toFixed(1)}K (${t.pnl_pct.toFixed(1)}%)</td>
-        <td class="reason">${t.reason}</td>
-      </tr>`;
-    }
-  }).join("");
-  document.getElementById("tradeBody").innerHTML = rows;
-})();
-
-// ── Per-basket P&L summary ────────────────────────────────────────────────────
-(function buildBasketPnl() {
-  const bids = Object.keys(STATE.baskets).sort();
-  let totalEntry = 0, totalCur = 0;
-  let rows = "";
-
-  for (const bid of bids) {
-    const b = STATE.baskets[bid];
-    if (!b.stocks || !b.stocks.length) continue;
-    const hasCur = b.current_prices && Object.keys(b.current_prices).length > 0;
-    const entryVal = b.alloc_value || 0;
-    const curVal   = hasCur ? (b.current_value || entryVal) : entryVal;
-    const pnl      = curVal - entryVal;
-    const pnlPct   = (pnl / entryVal * 100);
-    const cls      = pnl >= 0 ? "green" : "red";
-    const sign     = pnl >= 0 ? "+" : "";
-    totalEntry += entryVal;
-    totalCur   += curVal;
-    rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:12px">
-      <span style="font-weight:600;color:#334155">Basket ${bid}</span>
-      <span class="${cls}" style="font-weight:600;white-space:nowrap">${sign}₹${(pnl/1e3).toFixed(1)}K &nbsp;(${sign}${pnlPct.toFixed(2)}%)</span>
-    </div>`;
-  }
-
-  const totalPnl    = totalCur - totalEntry;
-  const totalPnlPct = totalEntry > 0 ? (totalPnl / totalEntry * 100) : 0;
-  const totalCls    = totalPnl >= 0 ? "green" : "red";
-  const totalSign   = totalPnl >= 0 ? "+" : "";
-  rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;font-size:12px">
-    <span style="font-weight:700;color:#0f172a">Total (Baskets)</span>
-    <span></span>
-    <span class="${totalCls}" style="font-weight:700;white-space:nowrap">${totalSign}₹${(totalPnl/1e3).toFixed(1)}K &nbsp;(${totalSign}${totalPnlPct.toFixed(2)}%)</span>
-  </div>`;
-
-  document.getElementById("basketPnlDiv").innerHTML =
-    `<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Live P&amp;L by Basket</div>${rows}`;
-})();
-
-// ── Header: dynamic regime / nifty / date from JS constants ──────────────────
-(function buildHeader() {
-  const isOn     = REGIME === "RISK-ON";
-  const arrow    = isOn ? "▲" : "▼";
-  const activeB  = Object.values(STATE.baskets).filter(b => b.stocks && b.stocks.length).length;
-  const totalB   = 4;  // max baskets
-  const pctDep   = Math.round(activeB / totalB * 100);
-  const fillPct  = pctDep;
-
-  // Regime badge
-  document.getElementById("regimeBadge").innerHTML =
-    `${arrow} ${REGIME} &nbsp;&nbsp; ${pctDep}% deployed`;
-  document.getElementById("regimeBadge").style.background = isOn ? "#dcfce7" : "#fee2e2";
-  document.getElementById("regimeBadge").style.color      = isOn ? "#166534" : "#991b1b";
-
-  // Nifty vs 200-DMA line
-  const diff    = NIFTY_PX - NIFTY_D200;
-  const diffPct = (diff / NIFTY_D200 * 100).toFixed(2);
-  const col     = diff >= 0 ? "#16a34a" : "#dc2626";
-  const sign    = diff >= 0 ? "+" : "";
-  document.getElementById("niftyLine").innerHTML =
-    `Nifty ${NIFTY_PX.toLocaleString("en-IN")} &nbsp;vs&nbsp; 200-DMA ${NIFTY_D200.toLocaleString("en-IN")} &nbsp;<span style="color:${col}">(${sign}${diffPct}%)</span>`;
-
-  // Last updated from SCAN_DATE
-  const sd = new Date(SCAN_DATE);
-  const fmt = sd.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
-  document.getElementById("lastUpdatedLine").textContent = `Last updated: ${fmt}`;
-
-  // Deploy bar
-  document.getElementById("deployFill").style.flex  = fillPct;
-  document.getElementById("deployEmpty").style.flex = 100 - fillPct;
-  document.getElementById("deployLabel").textContent = `${pctDep}% deployed (${REGIME})`;
-})();
-</script>
-</body>
-</html>
