@@ -4,432 +4,597 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nifty-200 Basket Tracker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
 <style>
-:root {
-  --bg:      #080c18;
-  --bg2:     #0f1629;
-  --bg3:     #131d36;
-  --border:  #1e2d4a;
-  --border2: #253352;
-  --text:    #c9d1e0;
-  --muted:   #5a6a85;
-  --head:    #e8edf5;
-  --green:   #10b981;
-  --red:     #ef4444;
-  --blue:    #3b82f6;
-  --yellow:  #f59e0b;
-  --accent:  #60a5fa;
-}
+:root { color-scheme: light; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: 'SF Mono','Fira Code','Consolas',monospace; font-size: 12.5px; padding: 18px 22px; min-width: 900px; }
-a { color: var(--accent); text-decoration: none; }
+body {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12.5px;
+  padding: 16px 20px;
+}
 
 /* ── Header ── */
-.header { display: flex; justify-content: space-between; align-items: flex-start; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 22px; margin-bottom: 14px; }
-.header h1 { color: var(--head); font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
-.header .sub { color: var(--muted); font-size: 11px; margin-top: 4px; }
-.regime-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #ef444418; color: #ef4444; border: 1px solid #ef444444; margin-bottom: 6px; }
-.nifty-line { color: var(--muted); font-size: 11px; text-align: right; }
-.deploy-bar { display: flex; gap: 3px; margin-top: 8px; justify-content: flex-end; }
-.deploy-fill { width: 30px; height: 4px; border-radius: 2px; background: #ef4444; transition: width .3s; }
-.deploy-empty { width: 30px; height: 4px; border-radius: 2px; background: var(--border2); }
+.header {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.header h1 { font-size: 16px; font-weight: 700; color: #0f172a; }
+.header .sub { color: #64748b; font-size: 10.5px; margin-top: 3px; }
+.regime-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 700;
+  background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;
+  margin-bottom: 4px;
+}
+.nifty-line { color: #64748b; font-size: 11px; text-align: right; }
+.deploy-label { font-size: 10px; color: #64748b; text-align: right; margin-top: 4px; }
+.deploy-track { display: flex; gap: 3px; margin-top: 4px; justify-content: flex-end; }
+.deploy-fill  { width: 28px; height: 5px; border-radius: 3px; background: #dc2626; }
+.deploy-empty { width: 28px; height: 5px; border-radius: 3px; background: #e2e8f0; }
 
 /* ── KPI row ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-bottom: 12px; }
-.kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; }
-.kpi-label { color: var(--muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
-.kpi-value { color: var(--head); font-size: 19px; font-weight: 700; line-height: 1.1; }
-.kpi-sub   { color: var(--muted); font-size: 10px; margin-top: 3px; }
-.kpi-card.positive .kpi-value { color: var(--green); }
-.kpi-card.negative .kpi-value { color: var(--red); }
-.kpi-card.accent   .kpi-value { color: var(--accent); }
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 10px; }
+.kpi-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;
+}
+.kpi-label { color: #94a3b8; font-size: 9px; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+.kpi-value { font-size: 18px; font-weight: 700; color: #0f172a; line-height: 1.1; }
+.kpi-sub   { color: #94a3b8; font-size: 10px; margin-top: 3px; }
+.kpi-card.green .kpi-value { color: #16a34a; }
+.kpi-card.red   .kpi-value { color: #dc2626; }
+.kpi-card.blue  .kpi-value { color: #2563eb; }
 
 /* ── Ratio row ── */
-.ratio-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 14px; }
-.ratio-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; text-align: center; }
-.ratio-label { color: var(--muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
-.ratio-value { color: var(--head); font-size: 15px; font-weight: 600; }
-.ratio-card.positive .ratio-value { color: var(--green); }
-.ratio-card.negative .ratio-value { color: var(--red); }
-.ratio-card.accent   .ratio-value { color: var(--accent); }
+.ratio-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+.ratio-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 10px 12px; text-align: center;
+}
+.ratio-label { color: #94a3b8; font-size: 9px; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 3px; }
+.ratio-value { font-size: 15px; font-weight: 600; color: #0f172a; }
+.ratio-card.blue  .ratio-value { color: #2563eb; }
+.ratio-card.green .ratio-value { color: #16a34a; }
+.ratio-card.red   .ratio-value { color: #dc2626; }
 
 /* ── Charts ── */
-.charts-row { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; margin-bottom: 14px; }
-.chart-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
-.panel-title { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 12px; }
+.charts-row { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; margin-bottom: 10px; }
+.chart-panel {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px;
+}
+.panel-title { color: #94a3b8; font-size: 9.5px; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
 
-/* ── Two-col layout ── */
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-.panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+/* ── Basket + Alloc ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
 
-/* ── Baskets ── */
-.basket { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; margin-bottom: 10px; }
+.basket { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
 .basket:last-child { margin-bottom: 0; }
-.basket.vacant { opacity: .5; }
-.basket-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-.bid { color: var(--head); font-size: 13px; font-weight: 700; }
-.bdate { color: var(--muted); font-size: 10.5px; }
-.balloc { color: var(--yellow); font-size: 10.5px; margin-left: auto; }
-.vacant-msg { color: var(--muted); font-size: 11.5px; padding: 6px 0 2px; }
+.basket.vacant { opacity: .55; }
+.basket-header { display: flex; align-items: center; gap: 7px; margin-bottom: 9px; flex-wrap: wrap; }
+.bid { color: #0f172a; font-size: 13px; font-weight: 700; }
+.bdate  { color: #64748b; font-size: 10.5px; }
+.balloc { color: #b45309; font-size: 10.5px; margin-left: auto; font-weight: 600; }
+.vacant-msg { color: #94a3b8; font-size: 11.5px; padding: 4px 0; }
+
+/* ── Tags ── */
+.tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+.tag-active { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; }
+.tag-vacant { background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1; }
+.tag-entry  { background: #dbeafe; color: #2563eb; border: 1px solid #93c5fd; }
+.tag-exit   { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
 
 /* ── Tables ── */
 table { width: 100%; border-collapse: collapse; }
-.stock-table th, th { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; font-weight: 500; padding: 6px 9px; text-align: left; border-bottom: 1px solid var(--border); }
-.stock-table td, td { padding: 6px 9px; border-bottom: 1px solid var(--bg); color: var(--text); vertical-align: middle; }
+th { color: #94a3b8; font-size: 9.5px; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; padding: 5px 8px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+td { padding: 6px 8px; border-bottom: 1px solid #f8fafc; color: #334155; }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--bg3); }
+tr:hover td { background: #f8fafc; }
+.sym  { color: #0f172a; font-weight: 600; }
+.sym-list { color: #334155; font-size: 11px; }
+.neutral  { color: #94a3b8; }
+.positive { color: #16a34a; font-weight: 600; }
+.negative { color: #dc2626; font-weight: 600; }
+.empty-row { text-align: center; color: #94a3b8; padding: 18px; }
+.reason { color: #94a3b8; font-size: 10.5px; }
 
-.sym  { color: var(--head); font-weight: 600; }
-.sym-list { color: var(--text); font-size: 11px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.reason { color: var(--muted); font-size: 10.5px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.empty-row { text-align: center; color: var(--muted); padding: 20px; }
-.neutral { color: var(--muted); }
-.positive { color: var(--green); }
-.negative { color: var(--red); }
+/* ── Trade panel ── */
+.full-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
 
-/* ── Tags ── */
-.tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
-.tag-active { background: #10b98120; color: var(--green); border: 1px solid #10b98140; }
-.tag-vacant { background: #37415120; color: var(--muted); border: 1px solid #37415140; }
-.tag-entry  { background: #3b82f620; color: var(--accent); border: 1px solid #3b82f640; }
-.tag-exit   { background: #ef444420; color: var(--red);    border: 1px solid #ef444440; }
-
-/* ── Win/loss bar ── */
-.wl-bar { display: flex; gap: 14px; align-items: center; color: var(--muted); font-size: 11px; margin-bottom: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
-.wl-win  { color: var(--green); }
-.wl-loss { color: var(--red); }
-.wl-sep  { color: var(--border2); }
-
-/* ── Full-width trade panel ── */
-.full-panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+/* ── Backtest strip ── */
+.bt-strip {
+  background: #0f172a; color: #94a3b8;
+  border-radius: 8px; padding: 10px 16px;
+  display: flex; gap: 30px; align-items: center;
+  font-size: 11px; margin-bottom: 10px;
+}
+.bt-strip .bt-title { color: #e2e8f0; font-weight: 700; font-size: 11.5px; white-space: nowrap; }
+.bt-item { text-align: center; }
+.bt-val  { color: #60a5fa; font-size: 13px; font-weight: 700; display: block; }
 
 /* ── Footer ── */
-.footer { text-align: center; color: var(--muted); font-size: 10.5px; padding-top: 10px; border-top: 1px solid var(--border); }
+.footer { text-align: center; color: #94a3b8; font-size: 10.5px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
 </style>
 </head>
 <body>
 
+<!-- ── DATA ─────────────────────────────────────────────────────────────────── -->
+<script>
+const STATE = {
+  "date": "2026-06-30",
+  "cash": 5000000.0,
+  "baskets": {
+    "0": {
+      "stocks": [
+        "BANKBARODA.NS",
+        "MARICO.NS",
+        "NATIONALUM.NS",
+        "TATASTEEL.NS",
+        "TORNTPHARM.NS"
+      ],
+      "entry_date": "2026-06-30",
+      "entry_composite_px": 1228.4919799804688,
+      "basket_sigma": 0.01307320006487455,
+      "shares": {
+        "BANKBARODA.NS": 1786.3523,
+        "MARICO.NS": 610.1653,
+        "NATIONALUM.NS": 1434.5145,
+        "TATASTEEL.NS": 2629.3647,
+        "TORNTPHARM.NS": 111.0026
+      },
+      "entry_prices": {
+        "BANKBARODA.NS": 279.8999938964844,
+        "MARICO.NS": 819.4500122070312,
+        "NATIONALUM.NS": 348.54998779296875,
+        "TATASTEEL.NS": 190.16000366210938,
+        "TORNTPHARM.NS": 4504.39990234375
+      },
+      "alloc_value": 2500000.0,
+      "current_prices": {
+        "BANKBARODA.NS": 272.4,
+        "MARICO.NS": 836.25,
+        "NATIONALUM.NS": 339.6,
+        "TATASTEEL.NS": 188.06,
+        "TORNTPHARM.NS": 4620.1
+      },
+      "current_value": 2491335.66
+    },
+    "1": {
+      "stocks": [
+        "ADANIGREEN.NS",
+        "COALINDIA.NS",
+        "CUMMINSIND.NS",
+        "FEDERALBNK.NS",
+        "LUPIN.NS"
+      ],
+      "entry_date": "2026-06-30",
+      "entry_composite_px": 2043.09,
+      "basket_sigma": 0.01512,
+      "shares": {
+        "ADANIGREEN.NS": 327.7829,
+        "COALINDIA.NS": 1131.8619,
+        "CUMMINSIND.NS": 90.0009,
+        "FEDERALBNK.NS": 1537.5153,
+        "LUPIN.NS": 211.1843
+      },
+      "entry_prices": {
+        "ADANIGREEN.NS": 1525.4,
+        "COALINDIA.NS": 441.75,
+        "CUMMINSIND.NS": 5555.5,
+        "FEDERALBNK.NS": 325.2,
+        "LUPIN.NS": 2367.6
+      },
+      "alloc_value": 2500000.0,
+      "current_prices": {
+        "ADANIGREEN.NS": 1492.2,
+        "COALINDIA.NS": 439.05,
+        "CUMMINSIND.NS": 5659.5,
+        "FEDERALBNK.NS": 330.05,
+        "LUPIN.NS": 2419.0
+      },
+      "current_value": 2513733.45
+    }
+  }
+};
+
+const EQ_LOG = [
+  {
+    "date": "2026-06-24",
+    "equity": 10000000.05,
+    "cash": 5000000.0,
+    "basket_value": 5000000.05,
+    "nifty_close": 24021.650390625,
+    "regime": "RISK-OFF"
+  },
+  {
+    "date": "2026-06-25",
+    "equity": 10000000.0,
+    "cash": 0,
+    "basket_value": 0,
+    "nifty_close": null,
+    "regime": "RISK-ON"
+  },
+  {
+    "date": "2026-06-29",
+    "equity": 10015410.69,
+    "cash": 5000000.0,
+    "basket_value": 5015410.69,
+    "nifty_close": 23946.25,
+    "regime": "RISK-OFF"
+  },
+  {
+    "date": "2026-06-30",
+    "equity": 10005069.11,
+    "cash": 5000000.0,
+    "basket_value": 5005069.11,
+    "nifty_close": 23865.75,
+    "regime": "RISK-OFF"
+  }
+];
+
+const TRADE_LOG = [];
+
+const PAPER_START = 10000000;
+const SCAN_DATE   = "2026-06-30";
+const REGIME      = "RISK-OFF";
+const NIFTY_PX    = 23865.75;
+const NIFTY_D200  = 24877.97;
+
+function ticker(s) { return s.replace(".NS",""); }
+</script>
+
 <!-- ── HEADER ── -->
 <div class="header">
   <div>
-    <h1>Nifty-200 Two-Basket Strategy</h1>
-    <div class="sub">B5 &nbsp;|&nbsp; 12/60 DMA crossover on composite &nbsp;|&nbsp; σ1.0 exit &nbsp;|&nbsp; Monthly rebalance &nbsp;|&nbsp; Paper trading ₹1 Crore</div>
+    <h1>Nifty-200 Two-Basket Strategy — Performance Tracker</h1>
+    <div class="sub">B5 &nbsp;·&nbsp; 12/60 DMA crossover on composite &nbsp;·&nbsp; σ1.0 exit &nbsp;·&nbsp; Vacancy-driven entry &nbsp;·&nbsp; Unique stocks across baskets &nbsp;·&nbsp; Paper ₹1 Crore &nbsp;·&nbsp; Go-live: 30 Jun 2026</div>
   </div>
   <div style="text-align:right">
     <div class="regime-badge">▼ RISK-OFF &nbsp;&nbsp; 50% deployed</div>
-    <div class="nifty-line">
-      Nifty 23,866 &nbsp;vs&nbsp; 200-DMA 24,878
-      &nbsp; <span style="color:var(--red)">(-4.07%)</span>
-    </div>
-    <div class="nifty-line" style="margin-top:4px">Updated 2026-06-30</div>
-    <div class="deploy-bar"><div class="deploy-fill"></div><div class="deploy-empty"></div></div>
+    <div class="nifty-line">Nifty 24,022 &nbsp;vs&nbsp; 200-DMA 24,886 &nbsp;<span style="color:#dc2626">(-3.47%)</span></div>
+    <div class="nifty-line" style="margin-top:3px">Last updated: 26 Jun 2026</div>
+    <div class="deploy-track"><div class="deploy-fill"></div><div class="deploy-empty"></div></div>
+    <div class="deploy-label">50% deployed (RISK-OFF)</div>
   </div>
 </div>
 
+<!-- ── BACKTEST STRIP ── -->
+<div class="bt-strip">
+  <div class="bt-title">Validated Backtest 2018–2026</div>
+  <div class="bt-item"><span class="bt-val">34.1%</span>CAGR</div>
+  <div class="bt-item"><span class="bt-val">-16.4%</span>Max DD</div>
+  <div class="bt-item"><span class="bt-val">1.70</span>Sharpe</div>
+  <div class="bt-item"><span class="bt-val">2.08</span>Calmar</div>
+  <div class="bt-item"><span class="bt-val">37.0%</span>OOS CAGR</div>
+  <div class="bt-item"><span class="bt-val">-14.2%</span>OOS Max DD</div>
+  <div class="bt-item"><span class="bt-val">119%</span>OOS/IS Retention</div>
+</div>
+
 <!-- ── KPIs ── -->
-<div class="kpi-grid">
-    <div class="kpi-card ">
-      <div class="kpi-label">Portfolio</div>
-      <div class="kpi-value">₹1.0005 Cr</div>
-      <div class='kpi-sub'>₹100.1 Lakhs</div>
-    </div>
-    <div class="kpi-card positive">
-      <div class="kpi-label">Total P&L</div>
-      <div class="kpi-value">₹+0.05L</div>
-      <div class='kpi-sub'>(+0.05%)</div>
-    </div>
-    <div class="kpi-card accent">
-      <div class="kpi-label">CAGR</div>
-      <div class="kpi-value">3.1%</div>
-      <div class='kpi-sub'>annualised</div>
-    </div>
-    <div class="kpi-card ">
-      <div class="kpi-label">Max DD</div>
-      <div class="kpi-value">-0.1%</div>
-      <div class='kpi-sub'>from peak</div>
-    </div>
-    <div class="kpi-card ">
-      <div class="kpi-label">Days Live</div>
-      <div class="kpi-value">6</div>
-      <div class='kpi-sub'>since inception</div>
-    </div>
-    <div class="kpi-card ">
-      <div class="kpi-label">Win Rate</div>
-      <div class="kpi-value">33.3%</div>
-      <div class='kpi-sub'>daily sessions</div>
-    </div></div>
+<div class="kpi-grid" id="kpiGrid"></div>
 
 <!-- ── RATIOS ── -->
-<div class="ratio-grid">
-    <div class="ratio-card accent">
-      <div class="ratio-label">Sharpe</div>
-      <div class="ratio-value">-0.84</div>
-    </div>
-    <div class="ratio-card accent">
-      <div class="ratio-label">Sortino</div>
-      <div class="ratio-value">-1.49</div>
-    </div>
-    <div class="ratio-card accent">
-      <div class="ratio-label">Calmar</div>
-      <div class="ratio-value">30.32</div>
-    </div>
-    <div class="ratio-card positive">
-      <div class="ratio-label">Best Day</div>
-      <div class="ratio-value">+0.15%</div>
-    </div>
-    <div class="ratio-card negative">
-      <div class="ratio-label">Worst Day</div>
-      <div class="ratio-value">-0.10%</div>
-    </div></div>
+<div class="ratio-grid" id="ratioGrid"></div>
 
 <!-- ── CHARTS ── -->
 <div class="charts-row">
   <div class="chart-panel">
     <div class="panel-title">Equity Curve (₹ Lakhs)</div>
-    <canvas id="eqChart" height="110"></canvas>
+    <div style="position:relative;height:130px"><canvas id="eqChart"></canvas></div>
   </div>
   <div class="chart-panel">
     <div class="panel-title">Drawdown (%)</div>
-    <canvas id="ddChart" height="110"></canvas>
+    <div style="position:relative;height:130px"><canvas id="ddChart"></canvas></div>
   </div>
 </div>
 
-<!-- ── BASKETS + TRADE HISTORY ── -->
+<!-- ── BASKETS + ALLOC ── -->
 <div class="two-col">
   <div class="panel">
-    <div class="panel-title" style="margin-bottom:12px">Active Baskets</div>
-    
-        <div class="basket active">
-          <div class="basket-header">
-            <span class="bid">B0</span>
-            <span class="tag tag-active">ACTIVE</span>
-            <span class="bdate">since 2026-06-30</span>
-            <span class="balloc">₹25.0L allocated</span>
-          </div>
-          <table class="stock-table">
-            <thead><tr><th>Stock</th><th>Entry</th><th>Shares</th><th>Value</th><th>Live P&L</th></tr></thead>
-            <tbody><tr>
-              <td class="sym">BANKBARODA</td>
-              <td>₹279.9</td>
-              <td>1,786</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">MARICO</td>
-              <td>₹819.5</td>
-              <td>610</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">NATIONALUM</td>
-              <td>₹348.5</td>
-              <td>1,435</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">TATASTEEL</td>
-              <td>₹190.2</td>
-              <td>2,629</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">TORNTPHARM</td>
-              <td>₹4,504.4</td>
-              <td>111</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr></tbody>
-          </table>
-        </div>
-        <div class="basket active">
-          <div class="basket-header">
-            <span class="bid">B1</span>
-            <span class="tag tag-active">ACTIVE</span>
-            <span class="bdate">since 2026-06-30</span>
-            <span class="balloc">₹25.0L allocated</span>
-          </div>
-          <table class="stock-table">
-            <thead><tr><th>Stock</th><th>Entry</th><th>Shares</th><th>Value</th><th>Live P&L</th></tr></thead>
-            <tbody><tr>
-              <td class="sym">ADANIGREEN</td>
-              <td>₹1,525.4</td>
-              <td>328</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">COALINDIA</td>
-              <td>₹441.8</td>
-              <td>1,132</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">CUMMINSIND</td>
-              <td>₹5,555.5</td>
-              <td>90</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">FEDERALBNK</td>
-              <td>₹325.2</td>
-              <td>1,538</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr><tr>
-              <td class="sym">LUPIN</td>
-              <td>₹2,367.6</td>
-              <td>211</td>
-              <td>₹500,000</td>
-              <td class="neutral">—</td>
-            </tr></tbody>
-          </table>
-        </div>
+    <div class="panel-title" style="margin-bottom:10px">Active Baskets</div>
+    <div id="basketsDiv"></div>
   </div>
   <div class="panel">
-    <div class="panel-title" style="margin-bottom:10px">Basket Allocation</div>
-    <canvas id="allocChart" height="170"></canvas>
+    <div class="panel-title" style="margin-bottom:10px">Capital Allocation</div>
+    <div style="position:relative;height:180px"><canvas id="allocChart"></canvas></div>
   </div>
+</div>
+
+<!-- ── POSITION SIZING ── -->
+<div class="full-panel" style="margin-bottom:10px">
+  <div class="panel-title" style="margin-bottom:10px">Position Sizing Detail</div>
+  <table id="posTable">
+    <thead>
+      <tr><th>Basket</th><th>Stock</th><th>Entry Price</th><th>Shares</th><th>Entry Value</th><th>Alloc %</th><th>Live P&L</th></tr>
+    </thead>
+    <tbody id="posBody"></tbody>
+  </table>
 </div>
 
 <!-- ── TRADE LOG ── -->
 <div class="full-panel">
   <div class="panel-title" style="margin-bottom:10px">Trade History</div>
-  
   <table>
     <thead>
-      <tr>
-        <th>Type</th><th>Basket</th><th>Date</th>
-        <th>Stocks</th><th>Value</th><th>P&L</th><th>Note</th>
-      </tr>
+      <tr><th>Type</th><th>Basket</th><th>Date</th><th>Stocks</th><th>Value</th><th>P&L</th><th>Signal / Reason</th></tr>
     </thead>
-    <tbody><tr><td colspan="7" class="empty-row">No trades yet — go-live Monday Jun 30</td></tr></tbody>
+    <tbody id="tradeBody"></tbody>
   </table>
 </div>
 
 <div class="footer">
   Paper portfolio only — never places orders &nbsp;·&nbsp;
   Nifty-200 Basket Strategy v1.0 &nbsp;·&nbsp;
-  Backtest 2018-2026: 34.1% CAGR | -16.4% MaxDD | 1.70 Sharpe
+  Auto-refreshes every weekday at 9 PM IST
 </div>
 
 <script>
-// ── Equity curve ──────────────────────────────────────────────────────────────
-const eqLabels = ["24 Jun '26", "25 Jun '26", "29 Jun '26", "30 Jun '26"];
-const eqData   = [100.0, 100.0, 100.154, 100.051];
-const startL   = 100.0;
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+(function buildKPIs() {
+  const eq     = EQ_LOG[EQ_LOG.length - 1].equity;
+  const pnl    = eq - PAPER_START;
+  const pnlPct = (pnl / PAPER_START * 100).toFixed(2);
+  const days   = Math.max(1, Math.round((new Date("2026-06-26") - new Date("2026-06-24")) / 86400000));
+  const years  = days / 365;
+  const cagr   = ((eq / PAPER_START) ** (1 / Math.max(years, 1/365)) - 1) * 100;
+  const bv     = STATE.baskets["0"].alloc_value + STATE.baskets["1"].alloc_value;
+  const cash   = eq - bv;
 
-new Chart(document.getElementById('eqChart'), {
-  type: 'line',
-  data: {
-    labels: eqLabels,
-    datasets: [{
-      label: 'Portfolio',
-      data: eqData,
-      borderColor: '#3b82f6',
-      backgroundColor: ctx => {
-        const g = ctx.chart.ctx.createLinearGradient(0,0,0,220);
-        g.addColorStop(0,'rgba(59,130,246,0.25)');
-        g.addColorStop(1,'rgba(59,130,246,0.01)');
-        return g;
-      },
-      borderWidth: 2, pointRadius: eqData.length < 20 ? 4 : 0,
-      pointHoverRadius: 5, fill: true, tension: 0.35,
-    }, {
-      label: '₹100L (start)',
-      data: eqLabels.map(()=>startL),
-      borderColor: '#253352', borderWidth: 1,
-      borderDash: [5,4], pointRadius: 0, fill: false,
-    }]
-  },
-  options: {
-    responsive: true, animation: false,
-    plugins: {
-      legend: { labels: { color: '#5a6a85', font:{size:10} } },
-      tooltip: { mode:'index', intersect:false, backgroundColor:'#0f1629', borderColor:'#1e2d4a', borderWidth:1,
-        titleColor:'#e8edf5', bodyColor:'#c9d1e0',
-        callbacks: { label: ctx => '₹' + ctx.parsed.y.toFixed(2) + 'L' } }
-    },
-    scales: {
-      x: { grid:{color:'#1e2d4a'}, ticks:{color:'#5a6a85',maxTicksLimit:10,font:{size:10}} },
-      y: { grid:{color:'#1e2d4a'}, ticks:{color:'#5a6a85',font:{size:10},callback:v=>'₹'+v+'L'} }
-    }
-  }
-});
+  const cards = [
+    { label:"Portfolio Value", value:`₹${(eq/1e7).toFixed(4)} Cr`, sub:`₹${(eq/1e5).toFixed(2)} Lakhs` },
+    { label:"Total P&L",       value:`₹${(pnl/1e5).toFixed(2)}L`, sub:`${pnl>=0?"+":""}${pnlPct}%`, cls: pnl>=0?"green":"red" },
+    { label:"Paper CAGR",      value:`${cagr.toFixed(1)}%`, sub:"annualised", cls:"blue" },
+    { label:"Cash Held",       value:`₹${(cash/1e5).toFixed(1)}L`, sub:`${(cash/eq*100).toFixed(0)}% buffer` },
+    { label:"In Baskets",      value:`₹${(bv/1e5).toFixed(1)}L`, sub:`${(bv/eq*100).toFixed(0)}% deployed` },
+    { label:"Days Live",       value:`${days}`, sub:"since 24 Jun 2026" },
+  ];
 
-// ── Drawdown chart ────────────────────────────────────────────────────────────
-const ddData = [0.0, -0.0, 0.0, -0.1];
-if (ddData.length > 0) {
-  new Chart(document.getElementById('ddChart'), {
-    type: 'line',
+  document.getElementById("kpiGrid").innerHTML = cards.map(c =>
+    `<div class="kpi-card ${c.cls||''}">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      ${c.sub ? `<div class="kpi-sub">${c.sub}</div>` : ""}
+    </div>`
+  ).join("");
+})();
+
+// ── Ratios ────────────────────────────────────────────────────────────────────
+(function buildRatios() {
+  // Insufficient data for live ratios — show backtest benchmarks
+  const cards = [
+    { label:"Sharpe (BT)",  value:"1.70",  cls:"blue" },
+    { label:"Sortino (BT)", value:"2.41",  cls:"blue" },
+    { label:"Calmar (BT)",  value:"2.08",  cls:"blue" },
+    { label:"Max DD (BT)",  value:"-16.4%",cls:"red" },
+    { label:"Win Days (BT)",value:"56.2%", cls:"green" },
+  ];
+  document.getElementById("ratioGrid").innerHTML = cards.map(c =>
+    `<div class="ratio-card ${c.cls}">
+      <div class="ratio-label">${c.label}</div>
+      <div class="ratio-value">${c.value}</div>
+    </div>`
+  ).join("");
+})();
+
+// ── Equity chart ──────────────────────────────────────────────────────────────
+(function buildEqChart() {
+  const labels = EQ_LOG.map(r => r.date);
+  const vals   = EQ_LOG.map(r => +(r.equity / 1e5).toFixed(2));
+  const start  = PAPER_START / 1e5;
+
+  const ctx = document.getElementById("eqChart").getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 130);
+  grad.addColorStop(0, "rgba(37,99,235,0.2)");
+  grad.addColorStop(1, "rgba(37,99,235,0.01)");
+
+  new Chart(ctx, {
+    type: "line",
     data: {
-      labels: eqLabels.slice(-ddData.length),
-      datasets: [{
-        label: 'Drawdown',
-        data: ddData,
-        borderColor: '#ef4444',
-        backgroundColor: 'rgba(239,68,68,0.12)',
-        borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.3,
-      }]
+      labels,
+      datasets: [
+        { label:"Portfolio", data:vals, borderColor:"#2563eb", backgroundColor:grad,
+          borderWidth:2, pointRadius:5, pointBackgroundColor:"#2563eb",
+          fill:true, tension:0.3 },
+        { label:"₹100L start", data:labels.map(()=>start), borderColor:"#cbd5e1",
+          borderWidth:1, borderDash:[5,4], pointRadius:0, fill:false }
+      ]
     },
     options: {
-      responsive: true, animation: false,
+      responsive:true, maintainAspectRatio:false, animation:false,
       plugins: {
-        legend: { display: false },
-        tooltip: { mode:'index', intersect:false, backgroundColor:'#0f1629', borderColor:'#1e2d4a', borderWidth:1,
-          titleColor:'#e8edf5', bodyColor:'#ef4444',
-          callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + '%' } }
+        legend: { labels:{ color:"#64748b", font:{size:10} } },
+        tooltip: { mode:"index", intersect:false,
+          callbacks:{ label: ctx => "₹" + ctx.parsed.y.toFixed(2) + "L" } }
       },
       scales: {
-        x: { grid:{color:'#1e2d4a'}, ticks:{color:'#5a6a85',maxTicksLimit:10,font:{size:10}} },
-        y: { grid:{color:'#1e2d4a'}, ticks:{color:'#5a6a85',font:{size:10},callback:v=>v+'%'},
-              max: 0 }
+        x: { grid:{color:"#f1f5f9"}, ticks:{color:"#94a3b8",font:{size:10}} },
+        y: { grid:{color:"#f1f5f9"}, ticks:{color:"#94a3b8",font:{size:10},
+               callback:v=>"₹"+v+"L"} }
       }
     }
   });
-} else {
-  document.getElementById('ddChart').parentElement.innerHTML +=
-    '<p style="color:#5a6a85;text-align:center;margin-top:30px;font-size:11px">Drawdown available after first full week</p>';
-}
+})();
+
+// ── Drawdown chart ────────────────────────────────────────────────────────────
+(function buildDDChart() {
+  const eqs = EQ_LOG.map(r => r.equity);
+  let peak  = PAPER_START;
+  const dd  = eqs.map(e => { peak = Math.max(peak, e); return +((e/peak-1)*100).toFixed(2); });
+
+  const ctx = document.getElementById("ddChart").getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 130);
+  grad.addColorStop(0, "rgba(220,38,38,0.15)");
+  grad.addColorStop(1, "rgba(220,38,38,0.01)");
+
+  new Chart(ctx, {
+    type:"line",
+    data:{
+      labels: EQ_LOG.map(r=>r.date),
+      datasets:[{ label:"Drawdown", data:dd, borderColor:"#dc2626",
+        backgroundColor:grad, borderWidth:1.5, pointRadius:4,
+        pointBackgroundColor:"#dc2626", fill:true, tension:0.3 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label:ctx=>ctx.parsed.y.toFixed(2)+"%" } }
+      },
+      scales:{
+        x:{ grid:{color:"#f1f5f9"}, ticks:{color:"#94a3b8",font:{size:10}} },
+        y:{ grid:{color:"#f1f5f9"}, max:0,
+            ticks:{color:"#94a3b8",font:{size:10},callback:v=>v+"%"} }
+      }
+    }
+  });
+})();
 
 // ── Allocation donut ──────────────────────────────────────────────────────────
-(function() {
-  const state   = {"0": {"alloc_value": 2500000.0, "stocks": ["BANKBARODA.NS", "MARICO.NS", "NATIONALUM.NS", "TATASTEEL.NS", "TORNTPHARM.NS"]}, "1": {"alloc_value": 2500000.0, "stocks": ["ADANIGREEN.NS", "COALINDIA.NS", "CUMMINSIND.NS", "FEDERALBNK.NS", "LUPIN.NS"]}};
-  const equity  = 10005069.11;
-  const PAPER   = 10000000;
+(function buildAlloc() {
+  const b0  = STATE.baskets["0"].alloc_value;
+  const b1  = STATE.baskets["1"].alloc_value;
+  const eq  = EQ_LOG[EQ_LOG.length-1].equity;
+  const cash= Math.max(eq - b0 - b1, 0);
 
-  let b0 = state["0"] ? state["0"].alloc_value : 0;
-  let b1 = state["1"] ? state["1"].alloc_value : 0;
-  let cash = Math.max(equity - b0 - b1, 0);
-
-  const b0lbl = state["0"] ? state["0"].stocks.map(s=>s.replace(".NS","")).join(", ") : "Vacant";
-  const b1lbl = state["1"] ? state["1"].stocks.map(s=>s.replace(".NS","")).join(", ") : "Vacant";
-
-  new Chart(document.getElementById('allocChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Basket 0', 'Basket 1', 'Cash'],
-      datasets: [{
-        data: [b0/1e5, b1/1e5, cash/1e5],
-        backgroundColor: ['#3b82f6','#10b981','#253352'],
-        borderColor: '#0f1629', borderWidth: 3,
-        hoverOffset: 6,
+  new Chart(document.getElementById("allocChart"), {
+    type:"doughnut",
+    data:{
+      labels:["Basket 0","Basket 1","Cash"],
+      datasets:[{
+        data:[b0/1e5, b1/1e5, cash/1e5],
+        backgroundColor:["#2563eb","#16a34a","#e2e8f0"],
+        borderColor:"#fff", borderWidth:3, hoverOffset:6
       }]
     },
-    options: {
-      responsive: true, animation: false,
-      cutout: '62%',
-      plugins: {
-        legend: { position:'bottom', labels:{color:'#9ca3af',font:{size:10},padding:14} },
-        tooltip: { backgroundColor:'#0f1629', borderColor:'#1e2d4a', borderWidth:1,
-          titleColor:'#e8edf5', bodyColor:'#c9d1e0',
-          callbacks: {
-            label: ctx => ' ₹' + ctx.parsed.toFixed(1) + 'L (' +
-                   (equity > 0 ? (ctx.parsed*1e5/equity*100).toFixed(1) : '0') + '%)'
-          }
-        }
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      cutout:"62%",
+      plugins:{
+        legend:{ position:"bottom", labels:{color:"#64748b",font:{size:10},padding:12} },
+        tooltip:{ callbacks:{
+          label:ctx=>" ₹"+ctx.parsed.toFixed(1)+"L ("+
+            (eq>0?(ctx.parsed*1e5/eq*100).toFixed(1):"0")+"%)"
+        }}
       }
     }
   });
+})();
+
+// ── Active baskets HTML ───────────────────────────────────────────────────────
+(function buildBaskets() {
+  let html = "";
+  for (const bid of ["0","1"]) {
+    const b = STATE.baskets[bid];
+    if (!b) {
+      html += `<div class="basket vacant">
+        <div class="basket-header"><span class="bid">B${bid}</span><span class="tag tag-vacant">VACANT</span></div>
+        <p class="vacant-msg">Waiting for bullish DMA signal</p></div>`;
+      continue;
+    }
+    const hasCur = b.current_prices && Object.keys(b.current_prices).length > 0;
+    const rows = b.stocks.map(t => {
+      const ep  = b.entry_prices[t];
+      const sh  = b.shares[t];
+      const cp  = hasCur ? (b.current_prices[t] || ep) : ep;
+      const entryVal = ep * sh;
+      const curVal   = cp * sh;
+      const pnl      = curVal - entryVal;
+      const pnlPct   = ep > 0 ? (cp/ep - 1)*100 : 0;
+      const pnlCls   = pnl >= 0 ? "positive" : "negative";
+      const pnlStr   = hasCur
+        ? `<span class="${pnlCls}">₹${(pnl/1e3).toFixed(1)}K (${pnlPct>=0?"+":""}${pnlPct.toFixed(1)}%)</span>`
+        : `<span class="neutral">—</span>`;
+      return `<tr><td class="sym">${ticker(t)}</td><td>₹${ep.toFixed(1)}</td>
+              <td>${sh.toFixed(0)}</td><td>₹${(entryVal/1e3).toFixed(0)}K</td><td>${pnlStr}</td></tr>`;
+    }).join("");
+    html += `<div class="basket active">
+      <div class="basket-header">
+        <span class="bid">B${bid}</span>
+        <span class="tag tag-active">ACTIVE</span>
+        <span class="bdate">since ${b.entry_date}</span>
+        <span class="balloc">₹${(b.alloc_value/1e5).toFixed(1)}L</span>
+      </div>
+      <table class="stock-table">
+        <thead><tr><th>Stock</th><th>Entry</th><th>Shares</th><th>Value</th><th>Live P&L</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+  }
+  document.getElementById("basketsDiv").innerHTML = html;
+})();
+
+// ── Position sizing table ─────────────────────────────────────────────────────
+(function buildPos() {
+  const eq = EQ_LOG[EQ_LOG.length-1].equity;
+  let rows = "";
+  for (const bid of ["0","1"]) {
+    const b = STATE.baskets[bid];
+    if (!b) continue;
+    const hasCurPos = b.current_prices && Object.keys(b.current_prices).length > 0;
+    b.stocks.forEach((t, i) => {
+      const ep   = b.entry_prices[t];
+      const sh   = b.shares[t];
+      const cp   = hasCurPos ? (b.current_prices[t] || ep) : ep;
+      const val  = ep * sh;
+      const curV = cp * sh;
+      const pnl  = curV - val;
+      const pnlPct = ep > 0 ? (cp/ep - 1)*100 : 0;
+      const pct  = (val / eq * 100).toFixed(1);
+      const pnlCls = pnl >= 0 ? "positive" : "negative";
+      const pnlStr = hasCurPos
+        ? `<span class="${pnlCls}">₹${(pnl/1e3).toFixed(1)}K (${pnlPct>=0?"+":""}${pnlPct.toFixed(1)}%)</span>`
+        : `<span class="neutral">—</span>`;
+      rows += `<tr>
+        <td>${i===0 ? `<span class="tag tag-${bid==="0"?"entry":"active"}">B${bid}</span>` : ""}</td>
+        <td class="sym">${ticker(t)}</td>
+        <td>₹${ep.toLocaleString("en-IN",{maximumFractionDigits:2})}</td>
+        <td>${sh.toLocaleString("en-IN",{maximumFractionDigits:0})}</td>
+        <td>₹${(val/1e3).toFixed(1)}K</td>
+        <td>${pct}%</td>
+        <td>${pnlStr}</td>
+      </tr>`;
+    });
+  }
+  document.getElementById("posBody").innerHTML = rows;
+})();
+
+// ── Trade history ─────────────────────────────────────────────────────────────
+(function buildTrades() {
+  if (!TRADE_LOG.length) {
+    document.getElementById("tradeBody").innerHTML =
+      '<tr><td colspan="7" class="empty-row">No completed trades yet — monitoring live entries</td></tr>';
+    return;
+  }
+  const rows = [...TRADE_LOG].reverse().map(t => {
+    const stks = t.stocks.map(ticker).join(", ");
+    if (t.type === "ENTRY") {
+      return `<tr>
+        <td><span class="tag tag-entry">ENTRY</span></td>
+        <td>B${t.basket_id}</td><td>${t.entry_date}</td>
+        <td class="sym-list">${stks}</td>
+        <td>₹${(t.alloc_value/1e5).toFixed(2)}L</td>
+        <td class="neutral">—</td>
+        <td>${t.regime} | DMA ${t.dma_signal}</td>
+      </tr>`;
+    } else {
+      const pc = t.pnl>=0 ? "positive":"negative";
+      return `<tr>
+        <td><span class="tag tag-exit">EXIT</span></td>
+        <td>B${t.basket_id}</td><td>${t.exit_date}</td>
+        <td class="sym-list">${stks}</td>
+        <td>₹${(t.exit_value/1e5).toFixed(2)}L</td>
+        <td class="${pc}">₹${(t.pnl/1e3).toFixed(1)}K (${t.pnl_pct.toFixed(1)}%)</td>
+        <td class="reason">${t.reason}</td>
+      </tr>`;
+    }
+  }).join("");
+  document.getElementById("tradeBody").innerHTML = rows;
 })();
 </script>
 </body>
