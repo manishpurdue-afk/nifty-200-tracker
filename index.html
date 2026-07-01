@@ -275,8 +275,8 @@ function ticker(s) { return s.replace(".NS",""); }
 <!-- ── BASKETS + ALLOC ── -->
 <div class="two-col">
   <div class="panel">
-    <div class="panel-title" style="margin-bottom:10px">Active Baskets</div>
-    <div id="basketsDiv"></div>
+    <div class="panel-title" style="margin-bottom:10px">Basket Health Monitor</div>
+    <div id="basketHealthDiv"></div>
   </div>
   <div class="panel">
     <div class="panel-title" style="margin-bottom:10px">Capital Allocation</div>
@@ -492,45 +492,63 @@ function ticker(s) { return s.replace(".NS",""); }
 })();
 
 // ── Active baskets HTML ───────────────────────────────────────────────────────
-(function buildBaskets() {
+(function buildBasketHealth() {
+  const today = new Date(SCAN_DATE);
   let html = "";
-  for (const bid of ["0","1"]) {
+
+  for (const bid of ["0","1","2","3"]) {
     const b = STATE.baskets[bid];
-    if (!b) {
-      html += `<div class="basket vacant">
-        <div class="basket-header"><span class="bid">B${bid}</span><span class="tag tag-vacant">VACANT</span></div>
-        <p class="vacant-msg">Waiting for bullish DMA signal</p></div>`;
+    if (!b || !b.stocks || !b.stocks.length) {
+      html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;opacity:.55">
+        <span style="font-weight:700;color:#0f172a;font-size:13px">B${bid}</span>
+        <span style="font-size:9.5px;font-weight:700;background:#f1f5f9;color:#94a3b8;border:1px solid #cbd5e1;padding:1px 7px;border-radius:4px;text-transform:uppercase">VACANT</span>
+        <span style="color:#94a3b8;font-size:11px;margin-left:4px">Waiting for DMA signal</span>
+      </div>`;
       continue;
     }
-    const hasCur = b.current_prices && Object.keys(b.current_prices).length > 0;
-    const rows = b.stocks.map(t => {
-      const ep  = b.entry_prices[t];
-      const sh  = b.shares[t];
-      const cp  = hasCur ? (b.current_prices[t] || ep) : ep;
-      const entryVal = ep * sh;
-      const curVal   = cp * sh;
-      const pnl      = curVal - entryVal;
-      const pnlPct   = ep > 0 ? (cp/ep - 1)*100 : 0;
-      const pnlCls   = pnl >= 0 ? "positive" : "negative";
-      const pnlStr   = hasCur
-        ? `<span class="${pnlCls}">₹${(pnl/1e3).toFixed(1)}K (${pnlPct>=0?"+":""}${pnlPct.toFixed(1)}%)</span>`
-        : `<span class="neutral">—</span>`;
-      return `<tr><td class="sym">${ticker(t)}</td><td>₹${ep.toFixed(1)}</td>
-              <td>${sh.toFixed(0)}</td><td>₹${(entryVal/1e3).toFixed(0)}K</td><td>${pnlStr}</td></tr>`;
-    }).join("");
-    html += `<div class="basket active">
-      <div class="basket-header">
-        <span class="bid">B${bid}</span>
-        <span class="tag tag-active">ACTIVE</span>
-        <span class="bdate">since ${b.entry_date}</span>
-        <span class="balloc">₹${(b.alloc_value/1e5).toFixed(1)}L</span>
+
+    const entryVal = b.alloc_value || 0;
+    const curVal   = b.current_value || entryVal;
+    const pnl      = curVal - entryVal;
+    const pnlPct   = entryVal > 0 ? (pnl / entryVal * 100) : 0;
+    const sigma    = b.basket_sigma || 0;
+    // σ exit at 1.0σ below entry composite
+    // proxy: how much of the σ-buffer has been consumed (if basket is down)
+    const sigmaUsedPct = sigma > 0 && pnlPct < 0 ? Math.min(Math.abs(pnlPct/100) / sigma * 100, 100) : 0;
+    const exitThreshPct = (sigma * 100).toFixed(2);
+
+    const entryDate = new Date(b.entry_date);
+    const daysHeld  = Math.round((today - entryDate) / 86400000);
+
+    const pnlCls  = pnl >= 0 ? "#16a34a" : "#dc2626";
+    const sign    = pnl >= 0 ? "+" : "";
+
+    // σ-buffer bar: red fill = how much of exit threshold consumed
+    const barFill = sigmaUsedPct.toFixed(0);
+    const barCol  = sigmaUsedPct > 70 ? "#dc2626" : sigmaUsedPct > 40 ? "#f59e0b" : "#16a34a";
+
+    html += `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-weight:700;color:#0f172a;font-size:13px">B${bid}</span>
+        <span style="font-size:9.5px;font-weight:700;background:#dcfce7;color:#16a34a;border:1px solid #86efac;padding:1px 7px;border-radius:4px;text-transform:uppercase">ACTIVE</span>
+        <span style="color:#64748b;font-size:10.5px">since ${b.entry_date}</span>
+        <span style="margin-left:auto;font-weight:700;color:${pnlCls};font-size:12px">${sign}₹${(pnl/1e3).toFixed(1)}K (${sign}${pnlPct.toFixed(2)}%)</span>
       </div>
-      <table class="stock-table">
-        <thead><tr><th>Stock</th><th>Entry</th><th>Shares</th><th>Value</th><th>Live P&L</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>`;
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px">
+        <div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;margin-bottom:2px">Days Held</div><div style="font-weight:600;color:#334155">${daysHeld}</div></div>
+        <div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;margin-bottom:2px">σ Exit Threshold</div><div style="font-weight:600;color:#334155">−${exitThreshPct}%</div></div>
+        <div><div style="color:#94a3b8;font-size:9px;text-transform:uppercase;margin-bottom:2px">Buffer Used</div><div style="font-weight:600;color:${barCol}">${barFill}%</div></div>
+      </div>
+      <div style="margin-bottom:3px">
+        <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${barFill}%;background:${barCol};border-radius:3px;transition:width .4s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-top:2px"><span>0%</span><span>Exit triggers at 100%</span></div>
+      </div>
+    </div>`;
   }
-  document.getElementById("basketsDiv").innerHTML = html;
+
+  document.getElementById("basketHealthDiv").innerHTML = html;
 })();
 
 // ── Position sizing table ─────────────────────────────────────────────────────
