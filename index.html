@@ -254,8 +254,8 @@ function ticker(s) { return s.replace(".NS",""); }
 <!-- ── HEADER ── -->
 <div class="header">
   <div>
-    <h1>Nifty-200 Two-Basket Strategy — Performance Tracker</h1>
-    <div class="sub">B5 &nbsp;·&nbsp; 12/60 DMA crossover on composite &nbsp;·&nbsp; σ1.0 exit &nbsp;·&nbsp; Vacancy-driven entry &nbsp;·&nbsp; Unique stocks across baskets &nbsp;·&nbsp; Paper ₹1 Crore &nbsp;·&nbsp; Go-live: 30 Jun 2026</div>
+    <h1>Nifty 200 Strategy Performance Tracker</h1>
+    <div class="sub">Paper ₹1 Crore &nbsp;·&nbsp; Go-live: 30 Jun 2026</div>
   </div>
   <div style="text-align:right">
     <div class="regime-badge" id="regimeBadge">—</div>
@@ -305,6 +305,7 @@ function ticker(s) { return s.replace(".NS",""); }
   <div class="panel">
     <div class="panel-title" style="margin-bottom:10px">Capital Allocation</div>
     <div style="position:relative;height:180px"><canvas id="allocChart"></canvas></div>
+    <div id="basketPnlDiv" style="margin-top:12px"></div>
   </div>
 </div>
 
@@ -331,22 +332,24 @@ function ticker(s) { return s.replace(".NS",""); }
 </div>
 
 <div class="footer">
-  Paper portfolio only — never places orders &nbsp;·&nbsp;
-  Nifty-200 Basket Strategy v1.0 &nbsp;·&nbsp;
-  Auto-refreshes every weekday at 9 PM IST
+  Paper portfolio only — never places orders &nbsp;·&nbsp; Auto-refreshes every weekday at 9 PM IST
+  <br>B5 &nbsp;·&nbsp; 12/60 DMA crossover on composite &nbsp;·&nbsp; σ1.0 exit &nbsp;·&nbsp; Vacancy-driven entry &nbsp;·&nbsp; Unique stocks across baskets
 </div>
 
 <script>
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 (function buildKPIs() {
-  const eq     = EQ_LOG[EQ_LOG.length - 1].equity;
-  const pnl    = eq - PAPER_START;
-  const pnlPct = (pnl / PAPER_START * 100).toFixed(2);
-  const days   = Math.max(1, Math.round((new Date("2026-06-26") - new Date("2026-06-24")) / 86400000));
-  const years  = days / 365;
-  const cagr   = ((eq / PAPER_START) ** (1 / Math.max(years, 1/365)) - 1) * 100;
-  const bv     = STATE.baskets["0"].alloc_value + STATE.baskets["1"].alloc_value;
-  const cash   = eq - bv;
+  const eq      = EQ_LOG[EQ_LOG.length - 1].equity;
+  const pnl     = eq - PAPER_START;
+  const pnlPct  = (pnl / PAPER_START * 100).toFixed(2);
+  const goLive  = new Date("2026-06-30");
+  const today   = new Date(SCAN_DATE);
+  const days    = Math.max(1, Math.round((today - goLive) / 86400000));
+  const years   = days / 365;
+  const cagr    = ((eq / PAPER_START) ** (1 / Math.max(years, 1/365)) - 1) * 100;
+  const bvArr   = Object.values(STATE.baskets).filter(b => b.stocks && b.stocks.length);
+  const bv      = bvArr.reduce((s, b) => s + (b.current_value || b.alloc_value || 0), 0);
+  const cash    = Math.max(0, eq - bv);
 
   const cards = [
     { label:"Portfolio Value", value:`₹${(eq/1e7).toFixed(4)} Cr`, sub:`₹${(eq/1e5).toFixed(2)} Lakhs` },
@@ -354,7 +357,7 @@ function ticker(s) { return s.replace(".NS",""); }
     { label:"Paper CAGR",      value:`${cagr.toFixed(1)}%`, sub:"annualised", cls:"blue" },
     { label:"Cash Held",       value:`₹${(cash/1e5).toFixed(1)}L`, sub:`${(cash/eq*100).toFixed(0)}% buffer` },
     { label:"In Baskets",      value:`₹${(bv/1e5).toFixed(1)}L`, sub:`${(bv/eq*100).toFixed(0)}% deployed` },
-    { label:"Days Live",       value:`${days}`, sub:"since 24 Jun 2026" },
+    { label:"Days Live",       value:`${days}`, sub:`since 30 Jun 2026` },
   ];
 
   document.getElementById("kpiGrid").innerHTML = cards.map(c =>
@@ -595,6 +598,45 @@ function ticker(s) { return s.replace(".NS",""); }
     }
   }).join("");
   document.getElementById("tradeBody").innerHTML = rows;
+})();
+
+// ── Per-basket P&L summary ────────────────────────────────────────────────────
+(function buildBasketPnl() {
+  const bids = Object.keys(STATE.baskets).sort();
+  let totalEntry = 0, totalCur = 0;
+  let rows = "";
+
+  for (const bid of bids) {
+    const b = STATE.baskets[bid];
+    if (!b.stocks || !b.stocks.length) continue;
+    const hasCur = b.current_prices && Object.keys(b.current_prices).length > 0;
+    const entryVal = b.alloc_value || 0;
+    const curVal   = hasCur ? (b.current_value || entryVal) : entryVal;
+    const pnl      = curVal - entryVal;
+    const pnlPct   = (pnl / entryVal * 100);
+    const cls      = pnl >= 0 ? "green" : "red";
+    const sign     = pnl >= 0 ? "+" : "";
+    totalEntry += entryVal;
+    totalCur   += curVal;
+    rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:12px">
+      <span style="font-weight:600;color:#334155">Basket ${bid}</span>
+      <span style="color:#64748b">${b.stocks.map(s=>s.replace(".NS","")).join(", ")}</span>
+      <span class="${cls}" style="font-weight:600;white-space:nowrap">${sign}₹${(pnl/1e3).toFixed(1)}K &nbsp;(${sign}${pnlPct.toFixed(2)}%)</span>
+    </div>`;
+  }
+
+  const totalPnl    = totalCur - totalEntry;
+  const totalPnlPct = totalEntry > 0 ? (totalPnl / totalEntry * 100) : 0;
+  const totalCls    = totalPnl >= 0 ? "green" : "red";
+  const totalSign   = totalPnl >= 0 ? "+" : "";
+  rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;font-size:12px">
+    <span style="font-weight:700;color:#0f172a">Total (Baskets)</span>
+    <span></span>
+    <span class="${totalCls}" style="font-weight:700;white-space:nowrap">${totalSign}₹${(totalPnl/1e3).toFixed(1)}K &nbsp;(${totalSign}${totalPnlPct.toFixed(2)}%)</span>
+  </div>`;
+
+  document.getElementById("basketPnlDiv").innerHTML =
+    `<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Live P&amp;L by Basket</div>${rows}`;
 })();
 
 // ── Header: dynamic regime / nifty / date from JS constants ──────────────────
