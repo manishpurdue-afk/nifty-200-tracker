@@ -258,11 +258,11 @@ function ticker(s) { return s.replace(".NS",""); }
     <div class="sub">B5 &nbsp;·&nbsp; 12/60 DMA crossover on composite &nbsp;·&nbsp; σ1.0 exit &nbsp;·&nbsp; Vacancy-driven entry &nbsp;·&nbsp; Unique stocks across baskets &nbsp;·&nbsp; Paper ₹1 Crore &nbsp;·&nbsp; Go-live: 30 Jun 2026</div>
   </div>
   <div style="text-align:right">
-    <div class="regime-badge">▼ RISK-OFF &nbsp;&nbsp; 50% deployed</div>
-    <div class="nifty-line">Nifty 24,022 &nbsp;vs&nbsp; 200-DMA 24,886 &nbsp;<span style="color:#dc2626">(-3.47%)</span></div>
-    <div class="nifty-line" style="margin-top:3px">Last updated: 26 Jun 2026</div>
-    <div class="deploy-track"><div class="deploy-fill"></div><div class="deploy-empty"></div></div>
-    <div class="deploy-label">50% deployed (RISK-OFF)</div>
+    <div class="regime-badge" id="regimeBadge">—</div>
+    <div class="nifty-line" id="niftyLine">—</div>
+    <div class="nifty-line" style="margin-top:3px" id="lastUpdatedLine">Last updated: —</div>
+    <div class="deploy-track"><div class="deploy-fill" id="deployFill"></div><div class="deploy-empty" id="deployEmpty"></div></div>
+    <div class="deploy-label" id="deployLabel">—</div>
   </div>
 </div>
 
@@ -595,6 +595,40 @@ function ticker(s) { return s.replace(".NS",""); }
     }
   }).join("");
   document.getElementById("tradeBody").innerHTML = rows;
+})();
+
+// ── Header: dynamic regime / nifty / date from JS constants ──────────────────
+(function buildHeader() {
+  const isOn     = REGIME === "RISK-ON";
+  const arrow    = isOn ? "▲" : "▼";
+  const activeB  = Object.values(STATE.baskets).filter(b => b.stocks && b.stocks.length).length;
+  const totalB   = 4;  // max baskets
+  const pctDep   = Math.round(activeB / totalB * 100);
+  const fillPct  = pctDep;
+
+  // Regime badge
+  document.getElementById("regimeBadge").innerHTML =
+    `${arrow} ${REGIME} &nbsp;&nbsp; ${pctDep}% deployed`;
+  document.getElementById("regimeBadge").style.background = isOn ? "#dcfce7" : "#fee2e2";
+  document.getElementById("regimeBadge").style.color      = isOn ? "#166534" : "#991b1b";
+
+  // Nifty vs 200-DMA line
+  const diff    = NIFTY_PX - NIFTY_D200;
+  const diffPct = (diff / NIFTY_D200 * 100).toFixed(2);
+  const col     = diff >= 0 ? "#16a34a" : "#dc2626";
+  const sign    = diff >= 0 ? "+" : "";
+  document.getElementById("niftyLine").innerHTML =
+    `Nifty ${NIFTY_PX.toLocaleString("en-IN")} &nbsp;vs&nbsp; 200-DMA ${NIFTY_D200.toLocaleString("en-IN")} &nbsp;<span style="color:${col}">(${sign}${diffPct}%)</span>`;
+
+  // Last updated from SCAN_DATE
+  const sd = new Date(SCAN_DATE);
+  const fmt = sd.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
+  document.getElementById("lastUpdatedLine").textContent = `Last updated: ${fmt}`;
+
+  // Deploy bar
+  document.getElementById("deployFill").style.flex  = fillPct;
+  document.getElementById("deployEmpty").style.flex = 100 - fillPct;
+  document.getElementById("deployLabel").textContent = `${pctDep}% deployed (${REGIME})`;
 })();
 </script>
 </body>
