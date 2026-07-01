@@ -347,13 +347,38 @@ function ticker(s) { return s.replace(".NS",""); }
 
 // ── Ratios ────────────────────────────────────────────────────────────────────
 (function buildRatios() {
-  // Insufficient data for live ratios — show backtest benchmarks
+  const eqs   = EQ_LOG.map(r => r.equity);
+  const n     = eqs.length;
+  let sharpe = "—", sortino = "—", calmar = "—", maxdd = "—", windays = "—";
+
+  if (n >= 2) {
+    const rets = eqs.slice(1).map((v,i) => (v - eqs[i]) / eqs[i]);
+    const mean = rets.reduce((a,b)=>a+b,0)/rets.length;
+    const std  = Math.sqrt(rets.map(r=>(r-mean)**2).reduce((a,b)=>a+b,0)/rets.length);
+    const neg  = rets.filter(r=>r<0);
+    const dstd = neg.length ? Math.sqrt(neg.map(r=>r**2).reduce((a,b)=>a+b,0)/neg.length) : 0;
+    const rf   = 0.06/252;
+    sharpe  = std  > 0 ? ((mean-rf)/std*Math.sqrt(252)).toFixed(2) : "—";
+    sortino = dstd > 0 ? ((mean-rf)/dstd*Math.sqrt(252)).toFixed(2) : "—";
+
+    let peak = eqs[0], worstDd = 0;
+    eqs.forEach(v => { peak = Math.max(peak,v); worstDd = Math.min(worstDd,(v/peak-1)*100); });
+    maxdd = worstDd.toFixed(1) + "%";
+
+    const annRet = ((eqs[n-1]/PAPER_START)**(365/Math.max(n,1))-1)*100;
+    calmar = worstDd < 0 ? (annRet/Math.abs(worstDd)).toFixed(2) : "—";
+
+    const wins = rets.filter(r=>r>0).length;
+    windays = (wins/rets.length*100).toFixed(1) + "%";
+  }
+
+  const ddCls = maxdd !== "—" && parseFloat(maxdd) < -5 ? "red" : "";
   const cards = [
-    { label:"Sharpe (BT)",  value:"1.70",  cls:"blue" },
-    { label:"Sortino (BT)", value:"2.41",  cls:"blue" },
-    { label:"Calmar (BT)",  value:"2.08",  cls:"blue" },
-    { label:"Max DD (BT)",  value:"-16.4%",cls:"red" },
-    { label:"Win Days (BT)",value:"56.2%", cls:"green" },
+    { label:"Sharpe",   value: sharpe,  cls: sharpe  !== "—" && +sharpe  > 1 ? "blue" : "" },
+    { label:"Sortino",  value: sortino, cls: sortino !== "—" && +sortino > 1 ? "blue" : "" },
+    { label:"Calmar",   value: calmar,  cls: calmar  !== "—" && +calmar  > 1 ? "blue" : "" },
+    { label:"Max DD",   value: maxdd,   cls: ddCls },
+    { label:"Win Days", value: windays, cls: windays !== "—" && parseFloat(windays) > 50 ? "green" : "red" },
   ];
   document.getElementById("ratioGrid").innerHTML = cards.map(c =>
     `<div class="ratio-card ${c.cls}">
