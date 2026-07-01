@@ -620,7 +620,6 @@ function ticker(s) { return s.replace(".NS",""); }
     totalCur   += curVal;
     rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:12px">
       <span style="font-weight:600;color:#334155">Basket ${bid}</span>
-      <span style="color:#64748b">${b.stocks.map(s=>s.replace(".NS","")).join(", ")}</span>
       <span class="${cls}" style="font-weight:600;white-space:nowrap">${sign}₹${(pnl/1e3).toFixed(1)}K &nbsp;(${sign}${pnlPct.toFixed(2)}%)</span>
     </div>`;
   }
