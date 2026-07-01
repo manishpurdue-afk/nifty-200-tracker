@@ -290,7 +290,7 @@ function ticker(s) { return s.replace(".NS",""); }
   <div class="panel-title" style="margin-bottom:10px">Position Sizing Detail</div>
   <table id="posTable">
     <thead>
-      <tr><th>Basket</th><th>Stock</th><th>Entry Price</th><th>Shares</th><th>Entry Value</th><th>Alloc %</th><th>Live P&L</th></tr>
+      <tr><th>Basket</th><th>Stock</th><th>Entry Price</th><th>Shares</th><th>Entry Value</th><th>LTP</th><th>LTP Value</th><th>Alloc %</th><th>Live P&L</th></tr>
     </thead>
     <tbody id="posBody"></tbody>
   </table>
@@ -553,31 +553,43 @@ function ticker(s) { return s.replace(".NS",""); }
 
 // ── Position sizing table ─────────────────────────────────────────────────────
 (function buildPos() {
-  const eq = EQ_LOG[EQ_LOG.length-1].equity;
+  const eq      = EQ_LOG[EQ_LOG.length-1].equity;
+  const ltpDate = SCAN_DATE ? new Date(SCAN_DATE).toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : "—";
   let rows = "";
   for (const bid of ["0","1"]) {
     const b = STATE.baskets[bid];
     if (!b) continue;
-    const hasCurPos = b.current_prices && Object.keys(b.current_prices).length > 0;
+    const hasCur = b.current_prices && Object.keys(b.current_prices).length > 0;
     b.stocks.forEach((t, i) => {
-      const ep   = b.entry_prices[t];
-      const sh   = b.shares[t];
-      const cp   = hasCurPos ? (b.current_prices[t] || ep) : ep;
-      const val  = ep * sh;
-      const curV = cp * sh;
-      const pnl  = curV - val;
-      const pnlPct = ep > 0 ? (cp/ep - 1)*100 : 0;
-      const pct  = (val / eq * 100).toFixed(1);
-      const pnlCls = pnl >= 0 ? "positive" : "negative";
-      const pnlStr = hasCurPos
-        ? `<span class="${pnlCls}">₹${(pnl/1e3).toFixed(1)}K (${pnlPct>=0?"+":""}${pnlPct.toFixed(1)}%)</span>`
+      const ep     = b.entry_prices[t];
+      const sh     = b.shares[t];
+      const ltp    = hasCur ? (b.current_prices[t] || ep) : null;
+      const entryVal = ep * sh;
+      const ltpVal   = ltp !== null ? ltp * sh : null;
+      const pnl      = ltpVal !== null ? ltpVal - entryVal : null;
+      const pnlPct   = pnl !== null && ep > 0 ? (ltp/ep - 1)*100 : null;
+      const pct      = (entryVal / eq * 100).toFixed(1);
+      const pnlCls   = pnl !== null ? (pnl >= 0 ? "positive" : "negative") : "";
+      const sign     = pnlPct !== null ? (pnlPct >= 0 ? "+" : "") : "";
+
+      const ltpCell  = ltp !== null
+        ? `₹${ltp.toLocaleString("en-IN",{maximumFractionDigits:2})} <span style="color:#94a3b8;font-size:9px">${ltpDate}</span>`
         : `<span class="neutral">—</span>`;
+      const ltpValCell = ltpVal !== null
+        ? `₹${(ltpVal/1e3).toFixed(1)}K`
+        : `<span class="neutral">—</span>`;
+      const pnlStr   = pnl !== null
+        ? `<span class="${pnlCls}">${sign}₹${(pnl/1e3).toFixed(1)}K (${sign}${pnlPct.toFixed(1)}%)</span>`
+        : `<span class="neutral">—</span>`;
+
       rows += `<tr>
-        <td>${i===0 ? `<span class="tag tag-${bid==="0"?"entry":"active"}">B${bid}</span>` : ""}</td>
+        <td>${i===0 ? `<span class="tag tag-active">B${bid}</span>` : ""}</td>
         <td class="sym">${ticker(t)}</td>
         <td>₹${ep.toLocaleString("en-IN",{maximumFractionDigits:2})}</td>
         <td>${sh.toLocaleString("en-IN",{maximumFractionDigits:0})}</td>
-        <td>₹${(val/1e3).toFixed(1)}K</td>
+        <td>₹${(entryVal/1e3).toFixed(1)}K</td>
+        <td>${ltpCell}</td>
+        <td>${ltpValCell}</td>
         <td>${pct}%</td>
         <td>${pnlStr}</td>
       </tr>`;
